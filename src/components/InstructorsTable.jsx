@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from './Toast'
 import InstructorModal from './InstructorModal'
+import ExitModal from './ExitModal'
 
 const PAGE = 25
 
@@ -14,9 +15,9 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
   const [fLoc, setFLoc]       = useState('')
   const [fGender, setFGender] = useState('')
   const [page, setPage]       = useState(1)
-  const [modal, setModal]     = useState(null) // null | 'add' | record
+  const [modal, setModal]     = useState(null)
+  const [exitRec, setExitRec] = useState(null)
 
-  // Sync filterCM prop → local state
   useMemo(() => { if (filterCM) setFCM(filterCM) }, [filterCM])
 
   const cms   = useMemo(() => uniq(data.map(r => r.capability_manager)), [data])
@@ -49,10 +50,10 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
   function removeFilter(setter) { setter(''); setPage(1) }
 
   const chips = [
-    fCM     && { label: fCM,     clear: () => { setFCM('');     setPage(1); onClearCM?.() } },
-    fDept   && { label: fDept,   clear: () => removeFilter(setFDept)   },
-    fLoc    && { label: fLoc,    clear: () => removeFilter(setFLoc)    },
-    fGender && { label: fGender, clear: () => removeFilter(setFGender) },
+    fCM     && { label: fCM,          clear: () => { setFCM(''); setPage(1); onClearCM?.() } },
+    fDept   && { label: fDept,         clear: () => removeFilter(setFDept)   },
+    fLoc    && { label: fLoc,          clear: () => removeFilter(setFLoc)    },
+    fGender && { label: fGender,       clear: () => removeFilter(setFGender) },
     search  && { label: `"${search}"`, clear: () => { setSearch(''); setPage(1) } },
   ].filter(Boolean)
 
@@ -68,7 +69,6 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
 
   return (
     <div>
-      {/* Filters */}
       <div className="filters-row">
         <input
           className="search-input"
@@ -100,7 +100,6 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
         )}
       </div>
 
-      {/* Active filter chips */}
       {chips.length > 0 && (
         <div className="chips">
           {chips.map((c, i) => (
@@ -112,7 +111,6 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
         </div>
       )}
 
-      {/* Table */}
       <div className="card">
         <div className="card-head">
           <span className="card-title">
@@ -139,7 +137,7 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
                 <th style={{ width: 70 }}>Gender</th>
                 <th style={{ width: 100 }}>DOJ</th>
                 <th>Email</th>
-                <th style={{ width: 90 }}>Actions</th>
+                <th style={{ width: 110 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -151,9 +149,7 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
                   <td style={{ fontWeight: 500 }}>{r.name}</td>
                   <td style={{ color: '#6b7280' }}>{r.role}</td>
                   <td>{r.capability_manager}</td>
-                  <td>
-                    <span className="pill pill-green">{deptShort(r.department)}</span>
-                  </td>
+                  <td><span className="pill pill-green">{deptShort(r.department)}</span></td>
                   <td>{r.work_location}</td>
                   <td>
                     <span className={`pill ${r.gender === 'Female' ? 'pill-pink' : 'pill-blue'}`}>
@@ -170,8 +166,14 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
                         onClick={() => setModal(r)}
                       >✏️</button>
                       <button
+                        className="btn btn-sm btn-icon"
+                        title="Mark as Exited"
+                        onClick={() => setExitRec(r)}
+                        style={{ background: '#FEF3C7', border: '1px solid #FCD34D', color: '#92400E' }}
+                      >🚪</button>
+                      <button
                         className="btn btn-sm btn-icon btn-danger"
-                        title="Delete"
+                        title="Delete permanently"
                         onClick={() => handleDelete(r)}
                       >🗑</button>
                     </div>
@@ -194,12 +196,19 @@ export default function InstructorsTable({ data, onRefresh, filterCM, onClearCM 
         )}
       </div>
 
-      {/* Modal */}
       {modal && (
         <InstructorModal
           record={modal === 'add' ? null : modal}
           onClose={() => setModal(null)}
           onSaved={onRefresh}
+        />
+      )}
+
+      {exitRec && (
+        <ExitModal
+          record={exitRec}
+          onClose={() => setExitRec(null)}
+          onDone={onRefresh}
         />
       )}
     </div>
