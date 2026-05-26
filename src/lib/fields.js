@@ -1,0 +1,33 @@
+export const FIELDS = [
+  { k: 'employee_id', l: 'Employee ID', req: true },
+  { k: 'name', l: 'Name', req: true },
+  { k: 'role', l: 'Role' },
+  { k: 'department', l: 'Department' },
+  { k: 'capability_manager', l: 'Capability Manager' },
+  { k: 'capability_manager_emp_id', l: 'CM Employee ID' },
+  { k: 'work_location', l: 'Work Location' },
+  { k: 'contribution', l: 'Contribution' },
+  { k: 'contribution_region', l: 'Contribution Region' },
+  { k: 'reporting_manager', l: 'Reporting Manager' },
+  { k: 'payroll', l: 'Payroll' },
+  { k: 'phone', l: 'Phone' },
+  { k: 'email', l: 'Email' },
+  { k: 'university_email', l: 'University Email' },
+  { k: 'doj', l: 'Date of Joining', type: 'date' },
+  { k: 'qualification', l: 'Qualification' },
+  { k: 'domain', l: 'Domain' },
+  { k: 'uid', l: 'UID' },
+  { k: 'gender', l: 'Gender', type: 'select', opts: ['', 'Male', 'Female', 'Other'] },
+  { k: 'native_language', l: 'Native Language' },
+  { k: 'portal_access', l: 'Portal Access' },
+  { k: 'exit_date', l: 'Exit Date', type: 'date' },
+  { k: 'remarks', l: 'Remarks', type: 'textarea', full: true },
+]
+
+export const IMPORT_KEYS = [
+  'employee_id', 'name', 'department', 'capability_manager', 'work_location',
+  'contribution', 'contribution_region', 'reporting_manager', 'payroll', 'role',
+  'phone', 'email', 'university_email', 'doj', 'qualification', 'domain', 'uid',
+  'gender', 'native_language', 'portal_access', 'capability_manager_emp_id',
+  'exit_date', 'remarks',
+]
