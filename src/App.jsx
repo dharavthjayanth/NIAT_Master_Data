@@ -92,11 +92,12 @@ export default function App() {
                 onClearCM={() => setFilterCM('')}
               />
             )}
-            {tab === 2 && <ExitRecords data={exits} />}
+            {tab === 2 && <ExitRecords data={exits} onRefresh={loadData} />}
             {tab === 3 && <ImportTab onRefresh={loadData} />}
           </>
         )}
       </main>
+      
 
       <ToastContainer toasts={toasts} />
     </div>

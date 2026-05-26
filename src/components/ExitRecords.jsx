@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react'
+import { supabase } from '../lib/supabase'
+import { toast } from './Toast'
 
 const PAGE = 25
 function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort() }
@@ -12,12 +14,13 @@ const REASON_COLORS = {
   'Other':                  'pill-gray',
 }
 
-export default function ExitRecords({ data }) {
+export default function ExitRecords({ data, onRefresh }) {
   const [search, setSearch]   = useState('')
   const [fCM, setFCM]         = useState('')
   const [fDept, setFDept]     = useState('')
   const [fReason, setFReason] = useState('')
   const [page, setPage]       = useState(1)
+  const [restoring, setRestoring] = useState(null) // id being restored
 
   const cms     = useMemo(() => uniq(data.map(r => r.capability_manager)), [data])
   const depts   = useMemo(() => uniq(data.map(r => r.department)), [data])
@@ -42,6 +45,65 @@ export default function ExitRecords({ data }) {
 
   function deptShort(d) { return (d || '').replace('Instructors - ', '') }
 
+  async function handleRestore(r) {
+    if (!window.confirm(`Restore "${r.name}" back to Master Data?`)) return
+
+    setRestoring(r.id)
+
+    // Build instructor record (exclude exit-specific fields)
+    const instructorRecord = {
+      employee_id:               r.employee_id,
+      name:                      r.name,
+      department:                r.department,
+      capability_manager:        r.capability_manager,
+      capability_manager_emp_id: r.capability_manager_emp_id,
+      work_location:             r.work_location,
+      contribution:              r.contribution,
+      contribution_region:       r.contribution_region,
+      reporting_manager:         r.reporting_manager,
+      payroll:                   r.payroll,
+      role:                      r.role,
+      phone:                     r.phone,
+      email:                     r.email,
+      university_email:          r.university_email,
+      doj:                       r.doj,
+      qualification:             r.qualification,
+      domain:                    r.domain,
+      uid:                       r.uid,
+      gender:                    r.gender,
+      native_language:           r.native_language,
+      portal_access:             r.portal_access,
+      remarks:                   r.remarks,
+    }
+
+    // Step 1 — insert back into instructors
+    const { error: insertError } = await supabase
+      .from('instructors')
+      .insert(instructorRecord)
+
+    if (insertError) {
+      toast('Error restoring to master: ' + insertError.message, 'error')
+      setRestoring(null)
+      return
+    }
+
+    // Step 2 — remove from exits
+    const { error: deleteError } = await supabase
+      .from('exits')
+      .delete()
+      .eq('id', r.id)
+
+    if (deleteError) {
+      toast('Restored to master but failed to remove from exits: ' + deleteError.message, 'error')
+      setRestoring(null)
+      return
+    }
+
+    setRestoring(null)
+    toast(`${r.name} restored to Master Data ✓`)
+    onRefresh()
+  }
+
   return (
     <div>
       <div style={{
@@ -53,7 +115,7 @@ export default function ExitRecords({ data }) {
         <span style={{ fontSize: 20 }}>🚪</span>
         <div>
           <strong>{data.length} instructor{data.length !== 1 ? 's' : ''} have exited.</strong>
-          {' '}These records are removed from Master Data and stored here for reference.
+          {' '}Click <strong>Restore</strong> on any row to move them back to Master Data.
         </div>
       </div>
 
@@ -98,17 +160,18 @@ export default function ExitRecords({ data }) {
                 <th style={{ width: 150 }}>Name</th>
                 <th style={{ width: 130 }}>Role</th>
                 <th style={{ width: 160 }}>Capability Manager</th>
-                <th style={{ width: 150 }}>Department</th>
-                <th style={{ width: 100 }}>DOJ</th>
-                <th style={{ width: 100 }}>Exit Date</th>
-                <th style={{ width: 150 }}>Exit Reason</th>
+                <th style={{ width: 140 }}>Department</th>
+                <th style={{ width: 95 }}>DOJ</th>
+                <th style={{ width: 95 }}>Exit Date</th>
+                <th style={{ width: 140 }}>Exit Reason</th>
                 <th>Email</th>
+                <th style={{ width: 90 }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {slice.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="loading-row">
+                  <td colSpan={10} className="loading-row">
                     {data.length === 0 ? 'No exit records yet.' : 'No records match your filters.'}
                   </td>
                 </tr>
@@ -129,6 +192,17 @@ export default function ExitRecords({ data }) {
                     </span>
                   </td>
                   <td style={{ fontSize: 12, color: '#6b7280' }}>{r.email}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm"
+                      title="Restore to Master Data"
+                      disabled={restoring === r.id}
+                      onClick={() => handleRestore(r)}
+                      style={{ background: '#E1F5EE', border: '1px solid #6EE7B7', color: '#065F46' }}
+                    >
+                      {restoring === r.id ? '...' : '↩ Restore'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
